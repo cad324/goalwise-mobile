@@ -1,0 +1,12 @@
+<svg width="271" height="159" viewBox="0 0 271 159" fill="none" xmlns="http://www.w3.org/2000/svg">
+<text fill="#505050" xml:space="preserve" style="white-space: pre" font-family="Inter" font-size="32" font-weight="bold" letter-spacing="0em"><tspan x="100.109" y="92.1364">650</tspan></text>
+<text fill="#DB7B22" fill-opacity="0.74" xml:space="preserve" style="white-space: pre" font-family="Inter" font-size="17" font-weight="600" letter-spacing="0em"><tspan x="119.594" y="127.682">Fair</tspan></text>
+<path d="M269.662 154.497C272.408 135.103 270.917 115.345 265.291 96.5836C259.666 77.8221 250.04 60.5031 237.076 45.82C224.113 31.1369 208.12 19.4389 190.2 11.5318C172.281 3.62473 152.86 -0.303339 133.275 0.0182345C113.691 0.339808 94.4096 4.90338 76.759 13.3945C59.1084 21.8857 43.5085 34.1025 31.0341 49.2032C18.5597 64.304 9.50748 81.9297 4.50104 100.866C-0.505389 119.802 -1.34697 139.598 2.03428 158.891L28.7274 154.213C26.0224 138.779 26.6957 122.942 30.7008 107.793C34.706 92.6437 41.9478 78.5432 51.9273 66.4626C61.9068 54.382 74.3867 44.6085 88.5072 37.8156C102.628 31.0227 118.053 27.3718 133.72 27.1146C149.388 26.8573 164.924 29.9998 179.26 36.3254C193.596 42.6511 206.39 52.0095 216.761 63.756C227.132 75.5025 234.833 89.3576 239.333 104.367C243.833 119.376 245.026 135.183 242.829 150.697L269.662 154.497Z" fill="url(#paint0_linear_3_10)"/>
+<defs>
+<linearGradient id="paint0_linear_3_10" x1="1.26816" y1="116.998" x2="269.592" y2="154.992" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF0000"/>
+<stop offset="0.5" stop-color="#F3F806"/>
+<stop offset="1" stop-color="#05FE00"/>
+</linearGradient>
+</defs>
+</svg>

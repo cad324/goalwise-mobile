@@ -1,0 +1,55 @@
+{
+    "appName": "GoalWise",
+    "navigation": {
+        "tasks": "Tasks",
+        "performance": "Performance",
+        "account": "Account"
+    },
+    "button": {
+        "login": "Login",
+        "logout": "Logout",
+        "signup": "Sign up",
+        "submit": "Submit",
+        "createAccount": "Create Account"
+    },
+    "tasks": {
+        "title": "My Tasks",
+        "addTaskModal": {
+            "title": "Add New Task",
+            "taskName": "Task Name",
+            "repeatOn": "Repeat on"
+        }
+    },
+    "days": {
+        "abbrev": {
+            "sunday": "Sun",
+            "monday": "Mon",
+            "tuesday": "Tues",
+            "wednesday": "Wed",
+            "thursday": "Thur",
+            "friday": "Fri",
+            "saturday": "Sat"
+        },
+        "abbrevLetter": {
+            "sunday": "S",
+            "monday": "M",
+            "tuesday": "T",
+            "wednesday": "W",
+            "thursday": "T",
+            "friday": "F",
+            "saturday": "S"
+        },
+        "sunday": "Sunday",
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday"
+    },
+    "login": {
+        "desc": "It's like having a credit score. Track how well you hold yourself accountable.",
+        "userOrPass": "Username or Email",
+        "password": "Password"
+    }
+}

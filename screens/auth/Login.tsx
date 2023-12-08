@@ -1,25 +1,76 @@
 import { View } from "react-native";
-import { Button, Text, Divider, TextInput } from "react-native-paper";
+import { Button, Text, Divider, TextInput, Snackbar } from "react-native-paper";
 import styles, { theme } from "../../styles/global.Style";
 import { StatusBar } from 'expo-status-bar';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from "../../App";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from '../../locales/i18n';
+import { useDispatch } from "react-redux";
+import { setAuthStatus, setTokens } from "../../app/features/authSlice";
+import Growl from "../../components/Growl";
+import { API_ENDPOINT } from "../../lib/constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Props = NativeStackScreenProps<RootStackParamList>
+type UserPass = {
+  username: string,
+  password: string
+}
 
 function Login({ navigation }: Props) {
 
-  const [loadingLoginBtn, setLoadingLoginBtn] = useState(false);
-  const emailRef = useRef(null);
-  const passwordRef = useRef(null);
+  const dispatch = useDispatch();
 
-  const handleLogin = () => {
-    const email: string | null = emailRef.current;
-    const password: string | null = emailRef.current;
-    navigation.navigate('Dashboard');
+  const [loadingLoginBtn, setLoadingLoginBtn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [growlVisible, setGrowlVisible] = useState(false);
+
+  const showGrowl = (duration=5000) => {
+    setGrowlVisible(true);
+    setTimeout(() => {
+      setGrowlVisible(false);
+    }, duration);
+  }
+
+  const loginWithEmailPassword = async () => {
+    setLoadingLoginBtn(true);
+    const apiEndpoint = `${API_ENDPOINT}/token/`;
+    const credentials: UserPass = { username, password };
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials)
+      });
+      if (response.ok) {
+        const tokens = await response.json();
+        console.log("[login_successful]");
+        dispatch(setTokens(tokens));
+        dispatch(setAuthStatus(true));
+        await AsyncStorage.setItem('accessToken', tokens.access);
+        await AsyncStorage.setItem('refreshToken', tokens.refresh);
+      }
+      if (response.status >= 400 && response.status < 500) {
+        setFeedbackMessage(i18n.t('login.invalidCredentials'));
+      }
+      if (response.status >= 500) {
+        setFeedbackMessage(i18n.t('error.networkIssue'));
+      }
+      if (!response.ok) 
+        throw Error(`${await response.text()} \nStatus: ${response.status}}`);
+    } catch (err) {
+      console.log("[ERROR]:", err);
+      showGrowl();
+    }
+    setLoadingLoginBtn(false);
   }
 
   return (
@@ -35,12 +86,13 @@ function Login({ navigation }: Props) {
         <View style={{height: 32}}></View>
         <View>
           <TextInput
-            ref={emailRef}
+            value={username}
+            onChangeText={setUsername}
             label={i18n.t('login.userOrPass')} />
           <View style={{height: 8}}></View>
           <TextInput
             secureTextEntry
-            ref={passwordRef}
+            onChangeText={setPassword}
             label={i18n.t('login.password')} />
         </View>
         <View style={{height: 32}}></View>
@@ -49,8 +101,9 @@ function Login({ navigation }: Props) {
           loading={loadingLoginBtn}
           style={{borderRadius: 4, width: '100%'}}
           buttonColor={theme.colors.primary}
-          mode="elevated"
-          onPress={handleLogin}>
+          mode="contained"
+          icon={'login'}
+          onPress={loginWithEmailPassword}>
             <Text style={{color: theme.colors.white}} variant="labelLarge">
               {i18n.t('button.login')}
             </Text>
@@ -60,7 +113,6 @@ function Login({ navigation }: Props) {
         <View style={{height: 20}}></View>
         <Button
           accessibilityLabel="Sign up"
-          loading={loadingLoginBtn}
           style={{borderRadius: 80, width: '100%'}}
           mode="elevated"
           onPress={() => console.log("signup")}>
@@ -68,6 +120,10 @@ function Login({ navigation }: Props) {
         </Button>
         <StatusBar style="auto" />
       </View>
+      <Growl
+        visible={growlVisible}
+        level={"error"}
+        message={feedbackMessage}/>
     </SafeAreaProvider>
   );
 }

@@ -1,28 +1,21 @@
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Card, Modal, Portal, Text, Button, Checkbox, TextInput, Title, RadioButton, Switch, Chip } from 'react-native-paper';
+import { Card, Modal, Portal, Text, Button, TextInput, Title, Chip } from 'react-native-paper';
 import { useState } from 'react';
 import i18n from '../locales/i18n';
-import { theme } from '../styles/global.Style';
+import { daysAbbreviated } from '../lib/constants';
+import api from '../lib/api.config';
 
 type AddTaskModalProps = {
     visible: boolean,
-    onDismiss: () => void
+    onDismiss: () => void,
+    onError: (msg: string) => void,
+    onSuccess: (msg: string) => void,
 }
 
-const daysAbbreviated = [
-    [i18n.t('days.abbrevLetter.sunday'), i18n.t('days.abbrev.sunday')],
-    [i18n.t('days.abbrevLetter.monday'), i18n.t('days.abbrev.monday')], 
-    [i18n.t('days.abbrevLetter.tuesday'), i18n.t('days.abbrev.tuesday')], 
-    [i18n.t('days.abbrevLetter.wednesday'), i18n.t('days.abbrev.wednesday')], 
-    [i18n.t('days.abbrevLetter.thursday'), i18n.t('days.abbrev.thursday')], 
-    [i18n.t('days.abbrevLetter.friday'), i18n.t('days.abbrev.friday')], 
-    [i18n.t('days.abbrevLetter.saturday'), i18n.t('days.abbrev.saturday')]
-];
-
-export default function AddTaskModal({ visible, onDismiss }: AddTaskModalProps) {
+export default function AddTaskModal({ visible, onDismiss, onError, onSuccess }: AddTaskModalProps) {
 
     const [taskName, setTaskName] = useState('');
-    const [selectedDays, setSelectedDays] = useState([false, false, false, false, false, false, false]);
+    const [selectedDays, setSelectedDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
 
     const reset = () => {
         setTaskName('');
@@ -30,20 +23,38 @@ export default function AddTaskModal({ visible, onDismiss }: AddTaskModalProps) 
     }
     
     const handleDaySelection = (dayOfTheWeek: number) => {
-        setSelectedDays({
-          ...selectedDays,
-          [dayOfTheWeek]: !selectedDays[dayOfTheWeek],
-        });
+        let newSelectedDays = [...selectedDays];
+        newSelectedDays[dayOfTheWeek] = !newSelectedDays[dayOfTheWeek];
+        setSelectedDays(newSelectedDays);
     };
 
-    const handleSubmit = () => {
+    const selectedDaysAsList = () => {
+        return selectedDays
+                .map((selected, index) => selected ? index+1 : null)
+                .filter(item => !!item);
+    }
+
+    const submitTask = async () => {
         const formData = {
-          taskName,
-          selectedDays,
+          title: taskName,
+          days_of_week: selectedDaysAsList(),
         };
         console.log(formData);
-        handleDismiss();
-      };
+        try {
+            const response = await api.post('/tasks/', formData);
+            const { data } = response;
+            console.log("[DATA]", data, response.status, response.statusText);
+            if (response.status === 201) {
+                handleDismiss();
+                onSuccess("Task successfully created");
+            } else {
+                throw Error(data!.message);
+            };
+        } catch (err) {
+            console.log("[submitTask]", err);
+            onError("idk something went wrong though lol");
+        }
+    };
 
     const handleDismiss = () => {
         onDismiss();
@@ -57,51 +68,51 @@ export default function AddTaskModal({ visible, onDismiss }: AddTaskModalProps) 
                     <ScrollView>
                         <Card>
                             <Card.Content>
-                            <Title>
-                                {i18n.t('tasks.addTaskModal.title')}
-                            </Title>
-                            <View style={{height: 20}}></View>
-                            <TextInput
-                                label={i18n.t('tasks.addTaskModal.taskName')}
-                                value={taskName}
-                                onChangeText={(text) => setTaskName(text)}
-                            />
-                            <View style={{height: 20}}></View>
-                            <Text variant='labelLarge'>
-                                {i18n.t('tasks.addTaskModal.repeatOn')}:
-                            </Text>
-                            <Text>
-                                {daysAbbreviated
-                                    .map(day => day[1])
-                                    .filter((_, index) => selectedDays[index])
-                                    .join(", ")}
-                            </Text>
-                            <View style={styles.daysRow}>
-                                {daysAbbreviated.map((day, index) => 
-                                    <Chip 
-                                        key={day[1]}
-                                        textStyle={styles.dayChipText} 
-                                        style={selectedDays[index] ? styles.dayChipSelected : styles.dayChip}
-                                        selected={selectedDays[index]}
-                                        showSelectedCheck={false}
-                                        showSelectedOverlay={true}
-                                        onPress={() => handleDaySelection(index)}
-                                        mode='outlined'
-                                    >
-                                        {day[0]}
-                                    </Chip>
-                                )}
-                            </View>
-                            <Button mode="contained" onPress={handleSubmit}>
-                                {i18n.t('button.submit')}
-                            </Button>
+                                <Title>
+                                    {i18n.t('tasks.addTaskModal.title')}
+                                </Title>
+                                <View style={{height: 20}}></View>
+                                <TextInput
+                                    label={i18n.t('tasks.addTaskModal.taskName')}
+                                    value={taskName}
+                                    maxLength={50}
+                                    onChangeText={(text) => setTaskName(text)}
+                                />
+                                <View style={{height: 20}}></View>
+                                <Text variant='labelLarge'>
+                                    {i18n.t('tasks.addTaskModal.repeatOn')}:
+                                </Text>
+                                <Text>
+                                    {daysAbbreviated
+                                        .map(day => day[1])
+                                        .filter((_, index) => selectedDays[index])
+                                        .join(", ")}
+                                </Text>
+                                <View style={styles.daysRow}>
+                                    {daysAbbreviated.map((day, index) =>
+                                        <Chip
+                                            key={day[1]}
+                                            textStyle={styles.dayChipText}
+                                            style={selectedDays[index] ? styles.dayChipSelected : styles.dayChip}
+                                            selected={selectedDays[index]}
+                                            showSelectedCheck={false}
+                                            showSelectedOverlay={true}
+                                            onPress={() => handleDaySelection(index)}
+                                            mode='outlined'
+                                        >
+                                            {day[0]}
+                                        </Chip>
+                                    )}
+                                </View>
+                                <Button mode="contained" onPress={submitTask}>
+                                    {i18n.t('button.submit')}
+                                </Button>
                             </Card.Content>
                         </Card>
                     </ScrollView>
                 </Modal>
             </View>
         </Portal>
-        
     )
 }
 
@@ -112,11 +123,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modal: {
-        backgroundColor: 'transparent',
-        shadowColor: 'transparent',
         width: '90%',
         alignSelf: 'center',
-        borderRadius: 15
+        borderRadius: 15,
     },
     row: {
         flex: 1,

@@ -1,83 +1,185 @@
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RouteProp, useNavigation, useScrollToTop } from '@react-navigation/native';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FAB, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, FAB, Portal, Text } from 'react-native-paper';
 import AddTaskModal from "../components/AddTaskModal";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import i18n from "../locales/i18n";
-import { Agenda, CalendarProvider, AgendaSchedule, AgendaEntry, DateData } from 'react-native-calendars';
+import { Day, GrowlLevel } from "../lib/types";
+import { daysOfWeek, unselectAllDays } from "../lib/constants";
+import TaskCard from "../components/TaskCard";
+import DatePicker from "../components/DatePicker";
+import { getFutureDates, showGrowl } from "../lib/utils";
+import Growl from "../components/Growl";
+import api from "../lib/api.config";
+import { theme } from "../styles/global.Style";
 
 type TaskProps = {
+  [key in Day]: {
+    id: string;
     title: string;
-    daysOfWeek: string;
+    days_of_week: number[];
+    duration?: string;
+  }[];
+};
+
+type TasksResponse = {
+  id: string,
+  title: string,
+  days_of_week: number[],
+}
+
+const transformTaskResponse = (res: TasksResponse[]) => {
+  return res.reduce((acc, task) => {
+    task.days_of_week.forEach((dayId) => {
+      const dayName = daysOfWeek[dayId-1];
+      if (!acc[dayName]) {
+        acc[dayName] = [];
+      }
+      acc[dayName].push({
+        id: task.id,
+        title: task.title,
+        days_of_week: task.days_of_week,
+      });
+    });
+    return acc;
+  }, {} as TaskProps);
 }
 
 export default function Tasks() {
-    const [modalVisible, setModalVisible] = useState(false);
-    const [tasks, setTasks] = useState<TaskProps>();
-    const [items, setItems] = useState<AgendaSchedule>({
-      '2023-11-05': [{
-        name: 'Cook at home',
-        height: 2,
-        day: 'Monday'
-      }]
-    });
 
-    const dismissAddTaskModal = () => setModalVisible(false);
+  const navigation = useNavigation();
 
-    const today = new Date().toDateString();
+  const currentDate = new Date();
+  const currentDayOfWeek = daysOfWeek[currentDate.getDay()];
 
-    const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
-      const fontSize = isFirst ? 16 : 14;
-      const color = isFirst ? 'black' : '#43515c';
-    
-      return (
-        <TouchableOpacity
-          style={[styles.item, {height: reservation.height}]}
-          onPress={() => Alert.alert(reservation.name)}
-        >
-          <Text style={{fontSize, color}}>{reservation.name}</Text>
-        </TouchableOpacity>
-      );
-    };
-    
-    const renderEmptyDate = () => {
-      return (
-        <View style={styles.emptyDate}>
-          <Text>This is empty date!</Text>
-        </View>
-      );
-    };
-    
-    const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
-      return r1.name !== r2.name;
-    };
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDay, setSelectedDay] = useState<Day>(currentDayOfWeek);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(currentDate.getDay());
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackLevel, setFeedbackLevel] = useState<GrowlLevel>('warning');
+  const [growlVisible, setGrowlVisible] = useState(false);
+  const [tasks, setTasks] = useState<TaskProps>(unselectAllDays);
+  const [loadingTasks, setLoadingTasks] = useState<boolean>(true);
 
-    const timeToString = (time: number) => {
-      const date = new Date(time);
-      return date.toISOString().split('T')[0];
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const response = await api.get('/tasks/');
+      const transformed = transformTaskResponse(response.data);
+      setTasks(transformed);
+      setLoadingTasks(false);
+    } catch (err) {
+      console.error('[fetchTasks]', err);
+      setLoadingTasks(false);
     }
+  }
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <Text variant="displaySmall">My Tasks</Text>
-            <CalendarProvider date="2023-11-27">
-              <Agenda
-                items={items}
-                selected={today}
-                renderItem={renderItem}
-                renderEmptyDate={renderEmptyDate}
-                rowHasChanged={rowHasChanged}
-                showClosingKnob={true}
-              />
-            </CalendarProvider>
-            <AddTaskModal visible={modalVisible} onDismiss={dismissAddTaskModal} />
-            <FAB
-                icon="plus"
-                style={styles.fab}
-                onPress={() => setModalVisible(true)}
-            />
-      </SafeAreaView>
-    );
+  const dismissAddTaskModal = () => setModalVisible(false);
+
+  const selectDay = (d: Date) => {
+    let day = d.getDay();
+    setSelectedDayIndex(day);
+    setSelectedDay(daysOfWeek[day]);
+    setSelectedDate(d);
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{flex: 0, flexDirection: 'row', justifyContent: 'space-between'}}>
+        <View>
+          <Text style={styles.title}>
+            {selectedDate.toLocaleString('default', { month: 'short' })} {selectedDate.getDate()}
+          </Text>
+          <Text style={styles.subtitle}>
+            {selectedDay}
+          </Text>
+        </View>
+        <View>
+          <Button mode="outlined" onPress={()=>{
+            selectDay(new Date());
+            scrollRef.current?.scrollTo({ x: 0 });
+          }}>
+            {i18n.t('tasks.today')}
+          </Button>
+        </View>
+      </View>
+      <View style={{height: 32}}></View>
+      <View>
+        <ScrollView 
+          showsHorizontalScrollIndicator={false} 
+          horizontal 
+          contentContainerStyle={styles.dateIndicatorContainer}
+          ref={scrollRef}
+        >
+          {
+            getFutureDates(currentDate, 6).map(
+              (d) => {
+                let selected = d.getDay() == selectedDayIndex;
+                return <DatePicker key={d.toString()} select={selectDay} selected={selected} date={d} />
+              }
+            )
+          }
+        </ScrollView>
+      </View>
+      {loadingTasks ?
+          <View style={{flex:1, justifyContent: 'center'}}>
+            <ActivityIndicator size={'large'} animating={true} color={theme.colors.primary} />
+          </View> :
+          <View style={{flex: 1}}>
+            <ScrollView
+              contentContainerStyle={{flex: 1}}
+              refreshControl={
+                <RefreshControl refreshing={loadingTasks} onRefresh={fetchTasks} />
+              }
+            >
+              {tasks[selectedDay]?.length ? 
+                <ScrollView style={{marginTop: 32}} showsVerticalScrollIndicator={false}>
+                  {tasks[selectedDay].map((task) => 
+                    <TaskCard key={task.id} id={task.id} title={task.title} days_of_week={task.days_of_week} />)}
+                </ScrollView> :
+                <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                  <Text variant="bodyLarge">{i18n.t('tasks.noRoutine')}</Text>
+                </View>
+              }
+            </ScrollView>
+          </View>
+      }
+      <AddTaskModal 
+        onError={(msg) => {
+          setFeedbackMessage(msg);
+          showGrowl(setGrowlVisible, setFeedbackLevel, "error");
+        }}
+        onSuccess={(msg) => {
+          setFeedbackMessage(msg);
+          showGrowl(setGrowlVisible, setFeedbackLevel, "success");
+          fetchTasks();
+        }}
+        visible={modalVisible} 
+        onDismiss={dismissAddTaskModal}
+      />
+      <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={() => setModalVisible(true)}
+      />
+      <Portal>
+        <Growl
+          visible={growlVisible}
+          level={feedbackLevel}
+          duration={3000}
+          message={feedbackMessage}/>
+      </Portal>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -86,147 +188,23 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     fab: {
-      right: 24,
-      bottom: 24,
-      borderRadius: 16,
+      right: 12,
+      bottom: 12,
+      borderRadius: 32,
+      padding: 0,
       position: 'absolute',
     },
-    item: {
-      backgroundColor: 'white',
-      flex: 1,
-      borderRadius: 5,
-      padding: 10,
-      marginRight: 10,
-      marginTop: 17
+    subtitle: {
+      color: 'grey',
+      fontSize: 32
     },
-    emptyDate: {
-      height: 15,
-      flex: 1,
-      paddingTop: 30
+    title: {
+      fontSize: 20,
+      fontWeight: '600'
     },
-    customDay: {
-      margin: 10,
-      fontSize: 24,
-      color: 'green'
-    },
-    dayItem: {
-      marginLeft: 34
+    dateIndicatorContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 20,
     }
-})
-
-const today = new Date().toISOString().split('T')[0];
-const fastDate = getPastDate(3);
-const futureDates = getFutureDates(12);
-const dates = [fastDate, today].concat(futureDates);
-
-function getFutureDates(numberOfDays: number) {
-  const array: string[] = [];
-  for (let index = 1; index <= numberOfDays; index++) {
-    let d = Date.now();
-    if (index > 8) {
-      // set dates on the next month
-      const newMonth = new Date(d).getMonth() + 1;
-      d = new Date(d).setMonth(newMonth);
-    }
-    const date = new Date(d + 864e5 * index); // 864e5 == 86400000 == 24*60*60*1000
-    const dateString = date.toISOString().split('T')[0];
-    array.push(dateString);
-  }
-  return array;
-}
-
-function getPastDate(numberOfDays: number) {
-  return new Date(Date.now() - 864e5 * numberOfDays).toISOString().split('T')[0];
-}
-
-const agendaItems = [
-    {
-      title: dates[0],
-      data: [{hour: '12am', duration: '1h', title: 'First Yoga'}]
-    },
-    {
-      title: dates[1],
-      data: [
-        {hour: '4pm', duration: '1h', title: 'Pilates ABC'},
-        {hour: '5pm', duration: '1h', title: 'Vinyasa Yoga'}
-      ]
-    },
-    {
-      title: dates[2],
-      data: [
-        {hour: '1pm', duration: '1h', title: 'Ashtanga Yoga'},
-        {hour: '2pm', duration: '1h', title: 'Deep Stretches'},
-        {hour: '3pm', duration: '1h', title: 'Private Yoga'}
-      ]
-    },
-    {
-      title: dates[3],
-      data: [{hour: '12am', duration: '1h', title: 'Ashtanga Yoga'}]
-    },
-    {
-      title: dates[4],
-      data: [{}]
-    },
-    {
-      title: dates[5],
-      data: [
-        {hour: '9pm', duration: '1h', title: 'Middle Yoga'},
-        {hour: '10pm', duration: '1h', title: 'Ashtanga'},
-        {hour: '11pm', duration: '1h', title: 'TRX'},
-        {hour: '12pm', duration: '1h', title: 'Running Group'}
-      ]
-    },
-    {
-      title: dates[6], 
-      data: [
-        {hour: '12am', duration: '1h', title: 'Ashtanga Yoga'}
-      ]
-    },
-    {
-      title: dates[7], 
-      data: [{}]
-    },
-    {
-      title: dates[8],
-      data: [
-        {hour: '9pm', duration: '1h', title: 'Pilates Reformer'},
-        {hour: '10pm', duration: '1h', title: 'Ashtanga'},
-        {hour: '11pm', duration: '1h', title: 'TRX'},
-        {hour: '12pm', duration: '1h', title: 'Running Group'}
-      ]
-    },
-    {
-      title: dates[9],
-      data: [
-        {hour: '1pm', duration: '1h', title: 'Ashtanga Yoga'},
-        {hour: '2pm', duration: '1h', title: 'Deep Stretches'},
-        {hour: '3pm', duration: '1h', title: 'Private Yoga'}
-      ]
-    },
-    {
-      title: dates[10], 
-      data: [
-        {hour: '12am', duration: '1h', title: 'Last Yoga'}
-      ]
-    },
-    {
-      title: dates[11],
-      data: [
-        {hour: '1pm', duration: '1h', title: 'Ashtanga Yoga'},
-        {hour: '2pm', duration: '1h', title: 'Deep Stretches'},
-        {hour: '3pm', duration: '1h', title: 'Private Yoga'}
-      ]
-    },
-    {
-      title: dates[12], 
-      data: [
-        {hour: '12am', duration: '1h', title: 'Last Yoga'}
-      ]
-    },
-    {
-      title: dates[13], 
-      data: [
-        {hour: '12am', duration: '1h', title: 'Last Yoga'}
-      ]
-    }
-];
+});

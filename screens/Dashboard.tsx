@@ -7,7 +7,7 @@ function Dashboard() {
     return (
       <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
         <View style={{height:20}}></View>
-        <Text style={{fontSize: 32}}>Welcome back, Dummy</Text>
+        <Text style={{fontSize: 32}}>Your Accountability Score</Text>
         <View style={{height:30}}></View>
         <ScoreArc score={580} />
         <Text>Accountability Score</Text>

@@ -26,9 +26,14 @@ export const theme = {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      primary: 'teal',
-      secondary: 'yellow',
-      white: 'white',
+      primary: '#008080',
+      secondary: '#F9F871',
+      white: '#FFF',
+      green: '#209B87',
+      blue: '#00809E',
+      red: '#8B1C00',
+      purple: '#7072B4',
+      orange: '#E16742'
     },
 };
 

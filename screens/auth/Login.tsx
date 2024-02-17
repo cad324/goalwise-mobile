@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Button, Text, Divider, TextInput, Snackbar } from "react-native-paper";
+import { Button, Text, Divider, TextInput } from "react-native-paper";
 import styles, { theme } from "../../styles/global.Style";
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -8,14 +8,15 @@ import { RootStackParamList } from "../../App";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from '../../locales/i18n';
 import { useDispatch } from "react-redux";
-import { setAuthStatus, setTokens } from "../../app/features/authSlice";
+import { login, setAuthStatus, setTokens } from "../../app/features/authSlice";
 import Growl from "../../components/Growl";
 import { API_ENDPOINT } from "../../lib/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../../lib/api.config";
 
 type Props = NativeStackScreenProps<RootStackParamList>
 type UserPass = {
-  username: string,
+  email: string,
   password: string
 }
 
@@ -39,24 +40,18 @@ function Login({ navigation }: Props) {
   const loginWithEmailPassword = async () => {
     setLoadingLoginBtn(true);
     const apiEndpoint = `${API_ENDPOINT}/token/`;
-    const credentials: UserPass = { username, password };
+    const credentials: UserPass = { email: username, password };
 
     try {
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(credentials)
-      });
-      if (response.ok) {
-        const tokens = await response.json();
-        console.log("[login_successful]");
-        dispatch(setTokens(tokens));
-        dispatch(setAuthStatus(true));
-        await AsyncStorage.setItem('accessToken', tokens.access);
-        await AsyncStorage.setItem('refreshToken', tokens.refresh);
+      const response = await api.post('/token/', credentials);
+      if (response.status === 200) {
+        const { access, refresh } = await response.data;
+        dispatch(
+          login({
+            access,
+            refresh,
+          })
+        );
       }
       if (response.status >= 400 && response.status < 500) {
         setFeedbackMessage(i18n.t('login.invalidCredentials'));
@@ -64,10 +59,8 @@ function Login({ navigation }: Props) {
       if (response.status >= 500) {
         setFeedbackMessage(i18n.t('error.networkIssue'));
       }
-      if (!response.ok) 
-        throw Error(`${await response.text()} \nStatus: ${response.status}}`);
     } catch (err) {
-      console.log("[ERROR]:", err);
+      console.log("[loginWithEmailPassword]:", err);
       showGrowl();
     }
     setLoadingLoginBtn(false);
@@ -75,7 +68,7 @@ function Login({ navigation }: Props) {
 
   return (
     <SafeAreaProvider>
-      <View style={[styles.container, styles.padding, styles.backgroundTeal]}>
+      <View style={[styles.container, styles.padding]}>
         <Text variant="displayLarge">
           {i18n.t('appName')}
         </Text>
@@ -88,7 +81,7 @@ function Login({ navigation }: Props) {
           <TextInput
             value={username}
             onChangeText={setUsername}
-            label={i18n.t('login.userOrPass')} />
+            label={i18n.t('login.email')} />
           <View style={{height: 8}}></View>
           <TextInput
             secureTextEntry
@@ -115,7 +108,7 @@ function Login({ navigation }: Props) {
           accessibilityLabel="Sign up"
           style={{borderRadius: 80, width: '100%'}}
           mode="elevated"
-          onPress={() => console.log("signup")}>
+          onPress={() => navigation.navigate('Register')}>
             <Text variant="labelLarge">{i18n.t('button.createAccount')}</Text>
         </Button>
         <StatusBar style="auto" />

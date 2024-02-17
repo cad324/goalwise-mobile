@@ -39,7 +39,7 @@ export default function AddTaskModal({ visible, onDismiss, onError, onSuccess }:
           title: taskName,
           days_of_week: selectedDaysAsList(),
         };
-        console.log(formData);
+        console.log(JSON.stringify(formData));
         try {
             const response = await api.post('/tasks/', formData);
             const { data } = response;
@@ -52,7 +52,7 @@ export default function AddTaskModal({ visible, onDismiss, onError, onSuccess }:
             };
         } catch (err) {
             console.log("[submitTask]", err);
-            onError("idk something went wrong though lol");
+            onError(`${err}`);
         }
     };
 

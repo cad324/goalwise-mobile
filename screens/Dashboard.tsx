@@ -1,47 +1,73 @@
-import { Card, Text } from "react-native-paper";
+import { ActivityIndicator, Text } from "react-native-paper";
 import ScoreArc from "../components/ScoreArc";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View } from "react-native";
+import i18n from "../locales/i18n";
+import StatusCard, { StatusCardLevel } from "../components/StatusCard";
+import { useEffect } from "react";
+import api from "../lib/api.config";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../app/store";
+import { setScore } from "../app/features/accountabilityScore";
+import { theme } from "../styles/global.Style";
+import { StatusBar } from "expo-status-bar";
 
 function Dashboard() {
+
+    const dispatch = useDispatch();
+    const score = useSelector((state: RootState) => state.accountabilityScore.score);
+
+    useEffect(() => {
+      fetchScore();
+    }, []);
+
+    const fetchScore = async () => {
+      try {
+        const response = await api.get('/accountability_score/');
+        const fetchedScore: number = response.data[0]["score"];
+        dispatch(setScore( fetchedScore ));
+      } catch (err) {
+        console.error('[fetchScore]', err);
+      }
+    }
+
     return (
       <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
-        <View style={{height:20}}></View>
-        <Text style={{fontSize: 32}}>Your Accountability Score</Text>
+        <StatusBar/>
         <View style={{height:30}}></View>
-        <ScoreArc score={580} />
-        <Text>Accountability Score</Text>
+        {score ? <ScoreArc score={score} /> : 
+          <View style={{height: 159, justifyContent: 'center'}}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        }
+        <Text>{i18n.t('performance.accountabilityScore')}</Text>
         <View style={{height:56}}></View>
         <View style={{flexDirection: 'row', width: '100%'}}>
-          <Card style={{flexBasis: '48%', borderRadius: 4, borderLeftColor: 'green', borderLeftWidth: 4}}>
-            <Card.Title title="Consistency" />
-            <Card.Content>
-              <Text variant="bodyMedium">How often you stand on business</Text>
-            </Card.Content>
-          </Card>
+          <StatusCard
+            title={i18n.t('performance.consistency.title')}
+            content={i18n.t('performance.consistency.content')}
+            level={StatusCardLevel.Good}
+          />
           <View style={{width:'4%'}}></View>
-          <Card style={{flexBasis: '48%', borderRadius: 4, borderLeftColor: 'orange', borderLeftWidth: 4}}>
-            <Card.Title title="Task Count" />
-            <Card.Content>
-              <Text variant="bodyMedium">You should have a number of different tasks in your routine</Text>
-            </Card.Content>
-          </Card>
+          <StatusCard
+            title={i18n.t('performance.taskCount.title')}
+            content={i18n.t('performance.taskCount.content')}
+            level={StatusCardLevel.Good}
+          />
         </View>
         <View style={{height:24}}></View>
         <View style={{flexDirection: 'row', width: '100%', flexWrap: 'wrap'}}>
-          <Card style={{flexBasis: '48%', borderRadius: 4, borderLeftColor: 'red', borderLeftWidth: 4}}>
-            <Card.Title title="Account Age" />
-            <Card.Content>
-              <Text variant="bodyMedium">The longer you use this, the better</Text>
-            </Card.Content>
-          </Card>
+          <StatusCard
+            title={i18n.t('performance.accountAge.title')}
+            content={i18n.t('performance.accountAge.content')}
+            level={StatusCardLevel.Bad}
+          />
           <View style={{width:'4%'}}></View>
-          <Card style={{flexBasis: '48%', borderRadius: 4, borderLeftColor: 'green', borderLeftWidth: 4}}>
-            <Card.Title title="Task Retention" />
-            <Card.Content>
-              <Text variant="bodyMedium">The less you delete tasks, the stronger this is</Text>
-            </Card.Content>
-          </Card>
+          <StatusCard
+            title={i18n.t('performance.taskRetention.title')}
+            content={i18n.t('performance.taskRetention.content')}
+            level={StatusCardLevel.Fair}
+          />
         </View>
       </SafeAreaView>
     );

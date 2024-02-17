@@ -80,7 +80,7 @@ export default function ManageTaskScreen({ route }: ManageTaskScreenProps) {
             const response = await api.delete(`/tasks/${id}/`);
             if (response.status == 204) {
                 setDeleteModalVisible(false);
-                navigation.navigate('LoggedInView', { 
+                navigation.navigate('LoggedInView', {
                     id,
                     showDeletedGrowl: true
                 });

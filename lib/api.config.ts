@@ -41,10 +41,10 @@ api.interceptors.response.use(
                     await AsyncStorage.setItem('accessToken', access);
                     return api(originalReq);
                 } else {
-                    console.error("No refresh token!");
+                    console.error("[api.config] No refresh token!");
                 }
             } catch (refreshError) {
-                console.error('Error refreshing token:', refreshError);
+                console.error('[api.config]', refreshError);
             }
         }
 

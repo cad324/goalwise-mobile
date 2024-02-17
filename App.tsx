@@ -10,20 +10,21 @@ import ManageTaskScreen from './screens/ManageTask';
 import { AppRegistry } from 'react-native';
 import Tasks from './screens/Tasks';
 import Account from './screens/Account';
-import api from './lib/api.config';
 import { useEffect, useState } from 'react';
 import { setAuthStatus } from './app/features/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SplashScreen from './screens/SplashScreen';
 import axios from 'axios';
 import { API_ENDPOINT } from './lib/constants';
+import Register from './screens/auth/Register';
 
 export type RootStackParamList = {
   Login: undefined,
   LoggedInView: undefined,
+  Register: undefined,
   ManageTask: { id: string; title: string, days_of_week: number[] },
   Tasks: undefined,
-  Account: undefined
+  Account: undefined,
 }
 
 export const Stack = createNativeStackNavigator();
@@ -69,9 +70,13 @@ function App() {
       </Stack.Navigator> : !isAuthenticated && initialized ? 
       <Stack.Navigator 
         initialRouteName={"Login"}
-        screenOptions={{ headerShown: false }}
+        screenOptions={{ headerShown: true }}
       >
-        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Login" options={{}} component={Login} />
+        <Stack.Screen 
+          name="Register"
+          options={{ title: 'Create Account' }} 
+          component={Register} />
       </Stack.Navigator> :
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />

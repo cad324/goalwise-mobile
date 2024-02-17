@@ -9,7 +9,7 @@ type Rating = 'Poor' | 'Fair' | 'Good' | 'Excellent' | 'Legendary';
 
 const rateScore = (score: number): {rating: Rating, color: string} => {
   if (score > 850 || score < 300) throw RangeError;
-  if (score < 560) return {rating: 'Poor', color: 'red'}
+  if (score < 550) return {rating: 'Poor', color: 'red'}
   if (score < 700) return {rating: 'Fair', color: 'orange'}
   if (score < 750) return {rating: 'Good', color: 'darkgreen'}
   if (score < 840) return {rating: 'Excellent', color: 'green'}

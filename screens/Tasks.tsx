@@ -1,5 +1,5 @@
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { RouteProp, useNavigation, useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from '@react-navigation/native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Button, FAB, Portal, Text } from 'react-native-paper';
 import AddTaskModal from "../components/AddTaskModal";
@@ -47,8 +47,6 @@ const transformTaskResponse = (res: TasksResponse[]) => {
 }
 
 export default function Tasks() {
-
-  const navigation = useNavigation();
 
   const currentDate = new Date();
   const currentDayOfWeek = daysOfWeek[currentDate.getDay()];
@@ -143,7 +141,7 @@ export default function Tasks() {
             >
               {tasks[selectedDay]?.length ? 
                 <ScrollView style={{marginTop: 32}} showsVerticalScrollIndicator={false}>
-                  {tasks[selectedDay].map((task) => 
+                  {tasks[selectedDay].map((task) =>
                     <TaskCard key={task.id} id={task.id} title={task.title} days_of_week={task.days_of_week} />)}
                 </ScrollView> :
                 <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>

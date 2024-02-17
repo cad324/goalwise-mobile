@@ -2,7 +2,15 @@
     "appName": "GoalWise",
     "error": {
         "networkError": "Oops, looks like something went wrong with our servers. Please try again later.",
-        "somethingWrong": "Something isn't right. Please try again later."
+        "somethingWrong": "Something isn't right. Please try again later.",
+        "fNameRequired": "First name is required",
+        "lNameRequired": "Last name is required",
+        "emailRequired": "Email is required",
+        "invalidEmail": "Invalid email",
+        "passwordRequired": "Password is required",
+        "passwordWeak": "Password must be at least 8 characters",
+        "password2Required": "Password Confirmation is required",
+        "passwordsNoMatch": "Passwords do not match"
     },
     "navigation": {
         "tasks": "Tasks",
@@ -67,8 +75,35 @@
     },
     "login": {
         "desc": "It's like having a credit score. Track how well you hold yourself accountable.",
-        "userOrPass": "Username or Email",
+        "email": "Email",
         "password": "Password",
         "invalidCredentials": "Invalid username/password. Please check your credentials and try again."
+    },
+    "register": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "email": "Email"
+    },
+    "performance": {
+        "title": "Your Accountability Score",
+        "accountabilityScore": "Accountability Score",
+        "consistency": {
+            "title": "Consistency",
+            "content": "The more consistent you are, the better your score."
+        },
+        "taskCount": {
+            "title": "Task Count",
+            "content": "Having multiple tasks in your routine adds to your accountability."
+        },
+        "accountAge": {
+            "title": "Account Age",
+            "content": "The longer you have been consistent, the better your score."
+        },
+        "taskRetention": {
+            "title": "Task Retention",
+            "content": "Not deleting tasks that you have committed to proves your accountability."
+        }
     }
 }
